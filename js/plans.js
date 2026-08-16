@@ -62,17 +62,17 @@ const GOAL_SCHEMES = {
    focus tag matched against exercise primary muscles.           */
 const MUSCLE_TAGS = {
   chest:  ['Chest', 'Upper Chest', 'Lower Chest'],
-  back:   ['Back', 'Lats', 'Mid Back', 'Upper Back', 'Lower Back'],
+  back:   ['Back', 'Lats', 'Mid Back', 'Upper Back', 'Lower Back', 'Traps'],
   shoulders: ['Shoulders', 'Side Delts', 'Front Delts', 'Rear Delts'],
-  biceps: ['Biceps'],
+  biceps: ['Biceps', 'Forearms'],
   triceps:['Triceps'],
   quads:  ['Quads'],
   hams:   ['Hamstrings'],
-  glutes: ['Glutes', 'Glute Medius'],
+  glutes: ['Glutes', 'Glute Medius', 'Inner Thighs'],
   calves: ['Calves'],
   core:   ['Abs', 'Core', 'Obliques', 'Lower Abs', 'Deep Core'],
-  cardio: ['Cardio'],
-  mobility: ['Mobility', 'Hips', 'Spine'],
+  cardio: ['Cardio', 'Full Body'],
+  mobility: ['Mobility', 'Hips', 'Spine', 'Hip Flexors'],
 };
 
 const SPLITS = {

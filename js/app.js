@@ -112,6 +112,7 @@ function renderOnboarding() {
         <span class="logo">💪</span>
         <h1 class="mt-2">Fit <span class="grad-text">For Life</span></h1>
         <p class="muted mt-1">Your personal world-class trainer.<br/>Every body. Every goal. Anywhere on Earth.</p>
+        <p class="splash-credit">Crafted by <span class="grad-text">Jayavardhan Tummidi</span></p>
       </div>
       <div class="card mt-3">
         <h3>✨ What you get</h3>
@@ -159,9 +160,9 @@ function renderOnboarding() {
       <h2>One important question 💛</h2>
       <p class="muted small mb-2">So we can keep every workout safe and effective for you.</p>
       <div class="choice-grid">
-        ${choiceBtn('maternity', 'none', '💪', 'Neither', 'Standard programs for me')}
         ${choiceBtn('maternity', 'pregnant', '🤰', 'Currently pregnant', 'Gentle prenatal-safe training')}
         ${choiceBtn('maternity', 'postpartum', '👶', 'Recently a mother', 'Core-restore &amp; gentle strength')}
+        ${choiceBtn('maternity', 'none', '💪', 'Neither', 'Standard programs for me')}
       </div>
       <p class="small muted mt-2">⚕️ Always get your doctor's OK before training during pregnancy or postpartum.</p>`;
   }
@@ -429,13 +430,16 @@ function renderWorkout() {
     const hint = weightHint(ex);
     const dayIds = day.exercises.map((e) => e.id);
     const alts = altsFor(slot.id, dayIds);
-    const altList = alts.map((a) => `
-      <div class="alt-item" onclick="swapExercise('${slot.id}', '${a.id}')">
-        <div class="alt-info">
-          <div class="an">${esc(a.n)}</div>
-          <div class="am">🎯 ${esc(a.m[0])} · ${a.eq === 'gym' ? '🏢 gym' : a.eq === 'min' ? '🏠 dumbbell/band' : '🌍 no equipment'}</div>
+    const altList = alts.map((a, ai) => `
+      <div class="alt-item">
+        <div class="alt-row">
+          <div class="alt-info">
+            <div class="an">${esc(a.n)}</div>
+            <div class="am">🎯 ${esc(a.m[0])} · ${a.eq === 'gym' ? '🏢 gym' : a.eq === 'min' ? '🏠 dumbbell/band' : '🌍 no equipment'}</div>
+          </div>
+          <button class="alt-watch" onclick="previewAlt(${idx}, ${ai}, '${a.id}')">▶ Watch</button>
         </div>
-        <span class="alt-swap">Swap ⇄</span>
+        <div class="alt-preview hidden" id="altprev-${idx}-${ai}"></div>
       </div>`).join('');
 
     return `
@@ -496,6 +500,30 @@ function toggleCard(idx) {
 
 function toggleAlts(idx) {
   document.querySelector(`#alts-${idx} .alts-list`)?.classList.toggle('hidden');
+}
+
+/* Alternative flow: watch the demo first, then decide to swap or keep browsing */
+function previewAlt(cardIdx, altIdx, altId) {
+  const box = document.querySelector(`#altprev-${cardIdx}-${altIdx}`);
+  const alt = EX_BY_ID[altId];
+  if (!box || !alt) return;
+  if (!box.classList.contains('hidden')) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+  // close other open previews in this card
+  document.querySelectorAll(`[id^="altprev-${cardIdx}-"]`).forEach((el) => { el.classList.add('hidden'); el.innerHTML = ''; });
+  const currentId = state.activeSession?.exercises?.[cardIdx]?.id;
+  const video = alt.vid
+    ? `<div class="video-shell"><iframe src="https://www.youtube-nocookie.com/embed/${alt.vid}?rel=0&modestbranding=1"
+         title="${esc(alt.n)} demo" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+         allowfullscreen loading="lazy"></iframe></div>`
+    : `<button class="btn btn-ghost btn-sm btn-block" onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(alt.v)}','_blank','noopener')">Watch demo on YouTube ↗</button>`;
+  box.innerHTML = `
+    ${video}
+    <ul class="cues">${alt.cues.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+    <div class="alt-decide">
+      <button class="btn btn-ghost btn-sm" onclick="previewAlt(${cardIdx}, ${altIdx}, '${altId}')">Keep looking 👀</button>
+      <button class="btn btn-primary btn-sm" onclick="swapExercise('${currentId}', '${altId}')">Yes, swap to this ⇄</button>
+    </div>`;
+  box.classList.remove('hidden');
 }
 
 function addSet(exId) {
@@ -737,7 +765,13 @@ function renderProfileScreen() {
       <p class="muted small mt-1">Everything — profile, plans, logs — lives only in this browser on this device.
       Nothing is ever uploaded. Use the same (non-incognito) browser to keep your progress.</p>
     </div>
-    <p class="center small muted mt-3">Fit For Life · made with 💜 · train anywhere</p>`;
+    <div class="credit-card">
+      <div class="credit-glow"></div>
+      <div class="credit-label">Designed &amp; Built by</div>
+      <div class="credit-name">Jayavardhan Tummidi</div>
+      <div class="credit-tag">"Train anywhere. Transform everywhere."</div>
+    </div>
+    <p class="center small muted mt-2">Fit For Life · made with 💜 · train anywhere</p>`;
 }
 
 function editProfile() {

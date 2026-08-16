@@ -287,19 +287,23 @@ h3 { font-size: 1.05rem; font-weight: 600; }
   padding: 11px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
 }
 .alts-list { margin-top: 8px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-.alt-item {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 11px 13px; cursor: pointer; background: var(--bg-2);
-  border-bottom: 1px solid var(--border); transition: background 0.15s;
-}
+.alt-item { background: var(--bg-2); border-bottom: 1px solid var(--border); }
 .alt-item:last-child { border-bottom: none; }
-.alt-item:active { background: var(--card-2); }
+.alt-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 13px; }
 .alt-item .an { font-weight: 600; font-size: 0.9rem; }
 .alt-item .am { font-size: 0.74rem; color: var(--muted); }
-.alt-item .alt-swap {
-  font-size: 0.76rem; font-weight: 700; color: var(--accent);
-  background: rgba(34, 211, 238, 0.12); border-radius: 99px; padding: 5px 11px; white-space: nowrap;
+.alt-watch {
+  font-size: 0.78rem; font-weight: 700; color: var(--accent); font-family: inherit;
+  background: rgba(34, 211, 238, 0.12); border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 99px; padding: 7px 14px; white-space: nowrap; cursor: pointer;
+  transition: transform 0.12s;
 }
+.alt-watch:active { transform: scale(0.95); }
+.alt-preview { padding: 0 13px 13px; animation: slideDown 0.25s ease; }
+.alt-preview .video-shell { margin-bottom: 10px; }
+.alt-preview .cues li { padding: 4px 0 4px 26px; font-size: 0.82rem; }
+.alt-decide { display: flex; gap: 8px; margin-top: 10px; }
+.alt-decide .btn { flex: 1; }
 
 /* ---------------- rest timer overlay ---------------- */
 .timer-overlay {
@@ -357,6 +361,39 @@ h3 { font-size: 1.05rem; font-weight: 600; }
 .mb-1 { margin-bottom: 8px; } .mb-2 { margin-bottom: 16px; }
 
 .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 200; overflow: hidden; }
+
+/* ---------------- creator credits ---------------- */
+.splash-credit { margin-top: 14px; font-size: 0.85rem; color: var(--muted); font-weight: 500; letter-spacing: 0.02em; }
+.splash-credit .grad-text { font-weight: 700; }
+
+.credit-card {
+  position: relative; overflow: hidden; text-align: center;
+  margin-top: 24px; padding: 26px 18px; border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid transparent;
+  background-image: linear-gradient(var(--card), var(--card)), var(--grad);
+  background-origin: border-box; background-clip: padding-box, border-box;
+  box-shadow: 0 10px 40px rgba(99, 102, 241, 0.25);
+}
+.credit-glow {
+  position: absolute; inset: -40%; pointer-events: none;
+  background: conic-gradient(from 0deg, transparent 0 70%, rgba(34,211,238,0.18) 80%, rgba(167,139,250,0.18) 90%, transparent 100%);
+  animation: spinGlow 6s linear infinite;
+}
+@keyframes spinGlow { to { transform: rotate(360deg); } }
+.credit-label {
+  position: relative; font-size: 0.68rem; text-transform: uppercase;
+  letter-spacing: 0.28em; color: var(--muted); font-weight: 600;
+}
+.credit-name {
+  position: relative; margin-top: 6px;
+  font-size: 1.65rem; font-weight: 900; letter-spacing: -0.01em;
+  background: var(--grad);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+.credit-tag { position: relative; margin-top: 8px; font-size: 0.82rem; color: var(--muted); font-style: italic; }
+
 .confetti span {
   position: absolute; top: -14px; font-size: 1.3rem;
   animation: fall linear forwards;
