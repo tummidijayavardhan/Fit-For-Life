@@ -189,6 +189,80 @@ const EXERCISES = [
   { id:'childs-pose', n:"Child's Pose", m:['Back','Hips','Recovery'], eq:'body', t:'mobility', v:'childs pose stretch tutorial', vid:'nMp3MlTz9fA', cues:['Knees wide, big toes together','Arms long, forehead down','5 slow breaths'], preg:true, post:true },
   { id:'ham-stretch', n:'Standing Hamstring Stretch', m:['Hamstrings','Mobility'], eq:'body', t:'mobility', v:'standing hamstring stretch tutorial', vid:'LVY692zJK0A', cues:['Heel on a low step','Hinge at hips, flat back','30 seconds per side'], preg:true, post:true },
   { id:'chest-doorway', n:'Doorway Chest Stretch', m:['Chest','Shoulders','Mobility'], eq:'body', t:'mobility', v:'doorway chest stretch tutorial', vid:'B9uY01NoqBg', cues:['Forearm on the doorframe','Step through gently','Great after pressing days'], preg:true, post:true },
+
+  /* ---------------- EXPANSION PACK: CHEST ---------------- */
+  { id:'machine-incline-press', n:'Machine Incline Press', m:['Upper Chest','Front Delts','Triceps'], eq:'gym', t:'compound', v:'machine incline chest press form', vid:'VesHgJR14E8', cues:['Seat set so handles hit upper chest','Press up and together','Slow 2-second negative'] },
+  { id:'low-cable-fly', n:'Low-to-High Cable Fly', m:['Upper Chest'], eq:'gym', t:'isolation', v:'low to high cable fly form', vid:'ZWa8v57fCZ8', cues:['Cables set low, slight lean forward','Sweep up to eye level','Squeeze the upper chest at the top'] },
+  { id:'svend-press', n:'Svend Press', m:['Chest'], eq:'min', t:'isolation', v:'svend press plate exercise form', vid:'kfQEMttvwbg', cues:['Press palms/plate together hard','Push straight out from the chest','The squeeze IS the exercise'], preg:true, post:true },
+  { id:'db-squeeze-press', n:'Dumbbell Squeeze Press', m:['Chest','Triceps'], eq:'min', t:'compound', v:'dumbbell squeeze press form', vid:'G2j_lJf6ljk', cues:['Dumbbells pressed together the whole set','Lower to chest, press up','Constant inner-chest tension'] },
+  { id:'archer-pushup', n:'Archer Push-Up', m:['Chest','Triceps','Core'], eq:'body', t:'compound', v:'archer push up tutorial', vid:'MxVbNel13Ek', cues:['Wide hands, shift onto one arm','Other arm stays straight','Half-way to a one-arm push-up'] },
+  { id:'plyo-pushup', n:'Plyometric Push-Up', m:['Chest','Triceps','Cardio'], eq:'body', t:'compound', v:'plyo push up clap tutorial', vid:'FRo3b_Pfw3M', cues:['Explode off the floor each rep','Land soft with bent elbows','Quality over quantity'] },
+
+  /* ---------------- EXPANSION PACK: BACK & TRAPS ---------------- */
+  { id:'bb-shrug', n:'Barbell Shrug', m:['Traps','Upper Back'], eq:'gym', t:'isolation', v:'barbell shrug proper form', vid:'MlqHEfydPpE', cues:['Shoulders straight up to the ears','Pause 1s at the top','No rolling — straight up and down'] },
+  { id:'db-shrug', n:'Dumbbell Shrug', m:['Traps','Upper Back'], eq:'min', t:'isolation', v:'dumbbell shrug form', vid:'rFsSeClGnNA', cues:['Heavy dumbbells at your sides','Shrug up, squeeze, lower slow','Keep arms relaxed'], post:true },
+  { id:'chest-supported-row', n:'Chest-Supported Dumbbell Row', m:['Mid Back','Lats','Rear Delts'], eq:'min', t:'compound', v:'chest supported dumbbell row form', vid:'oNsqMW1gPiU', cues:['Chest on an incline bench','Row elbows to the ceiling','Zero lower-back stress'] },
+  { id:'renegade-row', n:'Renegade Row', m:['Back','Core','Biceps'], eq:'min', t:'compound', v:'renegade row proper form', vid:'4qEIChzM4ZA', cues:['Plank on two dumbbells','Row one, fight the rotation','Feet wide for balance'] },
+  { id:'meadows-row', n:'Meadows Row', m:['Lats','Mid Back'], eq:'gym', t:'compound', v:'meadows row landmine form', vid:'w1d_wD0v3gc', cues:['Landmine bar, staggered stance','Overhand grip on the sleeve','Explosive pull, slow lower'] },
+  { id:'rack-pull', n:'Rack Pull', m:['Back','Traps','Glutes'], eq:'gym', t:'compound', v:'rack pull proper form', vid:'3RMufk1jELs', cues:['Bar set at knee height','Hinge, flat back, big pull','Overload the deadlift lockout'] },
+  { id:'inverted-row', n:'Inverted Row', m:['Mid Back','Lats','Biceps'], eq:'body', t:'compound', v:'inverted row under table form', vid:'k4F3ze51pt8', cues:['Under a bar or sturdy table','Body straight like a plank','Pull chest to the edge'] },
+  { id:'scap-pullup', n:'Scapular Pull-Up', m:['Lats','Upper Back'], eq:'gym', t:'isolation', v:'scapular pull up tutorial', vid:'9M8ylnbriB0', cues:['Dead hang, arms straight','Lift the chest by squeezing blades down','The secret to your first pull-up'] },
+  { id:'band-pulldown', n:'Band Lat Pulldown', m:['Lats','Biceps'], eq:'min', t:'compound', v:'resistance band lat pulldown kneeling', vid:'NoC3exjbYGk', cues:['Anchor band high (door)','Kneel tall, pull elbows to ribs','Squeeze lats 1 second'], preg:true, post:true },
+
+  /* ---------------- EXPANSION PACK: SHOULDERS ---------------- */
+  { id:'z-press', n:'Z-Press (Seated Floor Press)', m:['Shoulders','Core','Triceps'], eq:'min', t:'compound', v:'z press dumbbell floor form', vid:'BK2z6pRRbvQ', cues:['Sit on the floor, legs straight','No back support — core does the work','Press strictly overhead'] },
+  { id:'landmine-press', n:'Landmine Press', m:['Shoulders','Upper Chest','Core'], eq:'gym', t:'compound', v:'landmine press single arm form', vid:'Sjb5meztfSE', cues:['Bar in one hand at the shoulder','Press up and slightly forward','Shoulder-friendly press path'] },
+  { id:'plate-front-raise', n:'Plate Front Raise', m:['Front Delts'], eq:'gym', t:'isolation', v:'plate front raise form', vid:'yHQi_GUNc5o', cues:['Hold a plate at 3 and 9 o\u2019clock','Raise to eye level','Slow lower — no swinging'] },
+  { id:'band-lateral', n:'Band Lateral Raise', m:['Side Delts'], eq:'min', t:'isolation', v:'resistance band lateral raise form', vid:'yfNg5sFndbw', cues:['Stand on the band','Lead with the elbows to shoulder height','Constant tension the whole set'], preg:true, post:true },
+  { id:'wall-walk', n:'Wall Walk', m:['Shoulders','Core','Full Body'], eq:'body', t:'compound', v:'wall walk exercise tutorial', vid:'AKDhno7yPCE', cues:['Start in push-up, feet on the wall','Walk hands back, feet up','Walk out with control — never collapse'] },
+  { id:'handstand-pushup', n:'Wall Handstand Push-Up', m:['Shoulders','Triceps'], eq:'body', t:'compound', v:'wall handstand push up tutorial', vid:'gSjHRuRQ4hk', cues:['Kick up to the wall','Lower crown to the floor with control','Elite pressing strength'] },
+
+  /* ---------------- EXPANSION PACK: ARMS & GRIP ---------------- */
+  { id:'spider-curl', n:'Spider Curl', m:['Biceps'], eq:'min', t:'isolation', v:'spider curl dumbbell form', vid:'ivS3G35bapw', cues:['Chest on an incline bench, arms hanging','Curl without any swing','Peak-contraction specialist'] },
+  { id:'concentration-curl', n:'Concentration Curl', m:['Biceps'], eq:'min', t:'isolation', v:'concentration curl proper form', vid:'EjUnEEfTSEY', cues:['Elbow braced on inner thigh','Curl to the shoulder','Watch the muscle work — mind-muscle link'], preg:true, post:true },
+  { id:'zottman-curl', n:'Zottman Curl', m:['Biceps','Forearms'], eq:'min', t:'isolation', v:'zottman curl form', vid:'FSGDM9-dZ9w', cues:['Curl palms-up','Rotate palms-down at the top','Lower slow — forearms on fire'], post:true },
+  { id:'reverse-curl', n:'Reverse Curl', m:['Forearms','Biceps'], eq:'min', t:'isolation', v:'reverse curl ez bar form', vid:'MOEMvgYzNZQ', cues:['Overhand grip','Elbows glued to sides','Builds the forearm-bicep connection'], post:true },
+  { id:'wrist-curl', n:'Dumbbell Wrist Curl', m:['Forearms'], eq:'min', t:'isolation', v:'dumbbell wrist curl form', vid:'M8TpHw5aYgA', cues:['Forearms on thighs, palms up','Curl the wrists only','High reps, slow tempo'], preg:true, post:true },
+  { id:'dead-hang', n:'Dead Hang', m:['Forearms','Lats','Shoulders'], eq:'gym', t:'isolation', v:'dead hang benefits how to', vid:'ghJzaSAI1Nw', cues:['Full grip on the bar, arms straight','Shoulders relaxed, breathe','Build to 60 seconds'] },
+
+  /* ---------------- EXPANSION PACK: LEGS ---------------- */
+  { id:'smith-squat', n:'Smith Machine Squat', m:['Quads','Glutes'], eq:'gym', t:'compound', v:'smith machine squat proper form', vid:'iKCJCydYYrE', cues:['Feet slightly in front of the bar','Control the fixed path','Great for drop sets'] },
+  { id:'single-leg-press', n:'Single-Leg Press', m:['Quads','Glutes'], eq:'gym', t:'compound', v:'single leg press form', vid:'LbKwZIbVYZI', cues:['One foot mid-platform','Fix left-right imbalances','Never lock the knee hard'] },
+  { id:'cable-pull-through', n:'Cable Pull-Through', m:['Glutes','Hamstrings'], eq:'gym', t:'compound', v:'cable pull through form', vid:'DbSF7ipBh5Y', cues:['Face away, rope between legs','Hinge, then snap hips forward','Squeeze glutes at lockout'] },
+  { id:'hip-adduction', n:'Hip Adduction Machine', m:['Inner Thighs'], eq:'gym', t:'isolation', v:'hip adduction machine form', vid:'fwpMYCWdUNY', cues:['Squeeze knees together','Pause at the middle','Control the opening'] },
+  { id:'pistol-squat', n:'Pistol Squat', m:['Quads','Glutes','Balance'], eq:'body', t:'compound', v:'pistol squat progression tutorial', vid:'vq5-vdgJc0I', cues:['One leg out front, squat down','Hold a pole/door to scale','The king of leg calisthenics'] },
+  { id:'sissy-squat', n:'Sissy Squat', m:['Quads'], eq:'body', t:'isolation', v:'sissy squat tutorial form', vid:'pU7XbxvViIY', cues:['Rise on toes, lean back','Knees travel forward','Deep quad stretch — go slow'] },
+  { id:'nordic-curl', n:'Nordic Hamstring Curl', m:['Hamstrings'], eq:'body', t:'compound', v:'nordic hamstring curl at home', vid:'1IIavrSbEvo', cues:['Anchor heels under something solid','Lower as slow as possible','Push back up — hands help'] },
+  { id:'curtsy-lunge', n:'Curtsy Lunge', m:['Glute Medius','Quads'], eq:'body', t:'compound', v:'curtsy lunge proper form', vid:'WAW-2ehQ1GM', cues:['Step back and across','Hips stay square forward','Bow like royalty, rise like a beast'], post:true },
+  { id:'cossack-squat', n:'Cossack Squat', m:['Quads','Inner Thighs','Hips'], eq:'body', t:'compound', v:'cossack squat tutorial', vid:'nLNqEQ4B6XI', cues:['Wide stance, shift to one side','Other leg straight, toes up','Strength + mobility in one'] },
+  { id:'jump-lunge', n:'Jump Lunge', m:['Quads','Glutes','Cardio'], eq:'body', t:'cardio', v:'jump lunge exercise form', vid:'acLvV5Gwi7o', cues:['Lunge, explode, switch legs mid-air','Land soft in the next lunge','Pump the arms'] },
+  { id:'box-jump', n:'Box Jump', m:['Quads','Glutes','Cardio'], eq:'min', t:'cardio', v:'box jump proper form', vid:'HJZh-12p6vg', cues:['Stand close, swing and jump','Land soft, stand tall on top','STEP down — never jump down'] },
+  { id:'donkey-calf', n:'Donkey Calf Raise', m:['Calves'], eq:'gym', t:'isolation', v:'donkey calf raise machine form', vid:'watMaxAQBCU', cues:['Hinged at the hips','Massive stretch at the bottom','Pause on tip-toes'] },
+  { id:'stair-calf', n:'Stair Calf Raise', m:['Calves'], eq:'body', t:'isolation', v:'calf raise on stairs form', vid:'MQ-gecgtutA', cues:['Balls of feet on the step edge','Heels drop below the step','Full range, every rep'], preg:true, post:true },
+
+  /* ---------------- EXPANSION PACK: CORE ---------------- */
+  { id:'v-up', n:'V-Up', m:['Abs','Lower Abs'], eq:'body', t:'core', v:'v up exercise proper form', vid:'zDkDAET3GUA', cues:['Arms and legs meet in the middle','Fold like a jackknife','Lower with control'] },
+  { id:'flutter-kick', n:'Flutter Kicks', m:['Lower Abs','Hip Flexors'], eq:'body', t:'core', v:'flutter kicks proper form', vid:'tPmybsDX8ZY', cues:['Lower back pressed down','Small fast scissor kicks','Head and shoulders stay relaxed'] },
+  { id:'plank-shoulder-tap', n:'Plank Shoulder Taps', m:['Core','Obliques','Shoulders'], eq:'body', t:'core', v:'plank shoulder taps form', vid:'amA9sc6dmH0', cues:['High plank, feet wide','Tap opposite shoulder','Hips frozen — zero sway'], post:true },
+  { id:'copenhagen-plank', n:'Copenhagen Plank', m:['Inner Thighs','Obliques','Core'], eq:'body', t:'core', v:'copenhagen plank tutorial', vid:'IXjQrC45D7s', cues:['Top foot on a bench/chair','Lift hips into a side plank','Bulletproof groin strength'] },
+  { id:'dragon-flag', n:'Dragon Flag', m:['Abs','Core'], eq:'min', t:'core', v:'dragon flag progression tutorial', vid:'At0mMAHqWrQ', cues:['Grip the bench behind your head','Body straight as a flag','Lower slow — Bruce Lee\u2019s favorite'] },
+  { id:'l-sit', n:'L-Sit Hold', m:['Abs','Hip Flexors','Triceps'], eq:'body', t:'core', v:'l sit progression tutorial', vid:'HxDP7SqggpI', cues:['Hands by hips, push down hard','Legs straight out (tuck to scale)','Accumulate 20–30s total'] },
+  { id:'hanging-knee-raise', n:'Hanging Knee Raise', m:['Lower Abs','Hip Flexors'], eq:'gym', t:'core', v:'hanging knee raise form', vid:'p9hhX_Sx5v0', cues:['Dead hang, no swing','Knees to chest, curl the pelvis','Lower slow'] },
+  { id:'cable-woodchop', n:'Cable Woodchop', m:['Obliques','Core'], eq:'gym', t:'core', v:'cable woodchop exercise form', vid:'ZDt4MCvjMAA', cues:['Rotate from the hips and ribs','Arms stay long','High-to-low or low-to-high'] },
+  { id:'side-plank-dip', n:'Side Plank Hip Dips', m:['Obliques','Core'], eq:'body', t:'core', v:'side plank hip dips form', vid:'WVX-yDxt0IU', cues:['Strong side plank base','Dip the hip, lift it high','Slow and controlled'], post:true },
+
+  /* ---------------- EXPANSION PACK: CONDITIONING ---------------- */
+  { id:'sprawl', n:'Sprawls', m:['Cardio','Full Body'], eq:'body', t:'cardio', v:'sprawl exercise tutorial', vid:'_O5S_MMB7kI', cues:['Burpee\u2019s meaner cousin — hips to the floor','Pop back up fast','Stay light on your feet'] },
+  { id:'star-jump', n:'Star Jumps', m:['Cardio','Full Body'], eq:'body', t:'cardio', v:'star jump exercise form', vid:'eRMQuN34v7w', cues:['Explode into a star shape','Land soft, reset','Full-body power'] },
+  { id:'sled-push', n:'Sled Push', m:['Full Body','Quads','Cardio'], eq:'gym', t:'cardio', v:'sled push proper technique', vid:'Qw8q55JR5VY', cues:['Low body angle, arms locked','Drive with the legs','20–30m pushes, walk back rest'] },
+  { id:'farmer-carry', n:'Heavy Farmer Carry', m:['Forearms','Traps','Core'], eq:'min', t:'compound', v:'heavy farmer carry form', vid:'zwrjb9QDC6c', cues:['Heaviest dumbbells you can hold','Walk tall — no leaning','Grip, traps and core all scream'] },
+
+  /* ---------------- EXPANSION PACK: MOBILITY ---------------- */
+  { id:'pigeon-pose', n:'Pigeon Pose', m:['Hips','Glutes','Mobility'], eq:'body', t:'mobility', v:'pigeon pose stretch tutorial', vid:'AI5A1PRYX7E', cues:['Front shin across the mat','Square the hips, fold forward','Breathe into the tight spots'], post:true },
+  { id:'ninety-ninety', n:'90/90 Hip Switch', m:['Hips','Mobility'], eq:'body', t:'mobility', v:'90 90 hip mobility exercise', vid:'t4Zz6-aG8Iw', cues:['Both knees at 90°','Rotate side to side','Tall spine throughout'], preg:true, post:true },
+  { id:'thoracic-rotation', n:'Thoracic Rotations', m:['Spine','Mobility'], eq:'body', t:'mobility', v:'thoracic spine rotation exercise quadruped', vid:'Lfn-Fv_xmmQ', cues:['On all fours, hand behind head','Rotate elbow to the ceiling','Follow with the eyes'], preg:true, post:true },
+  { id:'couch-stretch', n:'Couch Stretch', m:['Hip Flexors','Quads','Mobility'], eq:'body', t:'mobility', v:'couch stretch tutorial', vid:'B3rOeBLqlF4', cues:['Rear foot up on a couch/wall','Squeeze the glute, stay tall','60–90s per side'] },
+  { id:'ankle-rock', n:'Ankle Rocks', m:['Mobility','Calves'], eq:'body', t:'mobility', v:'ankle mobility rocks exercise', vid:'I-Hgtc2e2fU', cues:['Half-kneel, knee over toes','Heel stays down','Unlocks deeper squats'], preg:true, post:true },
 ];
 
 /* Fast lookup map */

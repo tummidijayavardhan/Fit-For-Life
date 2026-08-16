@@ -19,7 +19,7 @@
    - ⚖️ **Weight-entry guidance** per equipment type (include the 20 kg/45 lb bar for barbells, log ONE dumbbell's weight for dumbbell moves, log the stack number for machines/cables)
    - 📝 **Set-by-set logging** (weight × reps, or seconds for timed moves) with a ➕ **Add another set** button (carries your last weight forward)
    - ⏱ An automatic full-screen **rest timer** (with +15s / skip) after every completed set
-   - 🔄 **Up to 6 alternative exercises** per movement (same muscle, equipment- and safety-aware) with one-tap swap — for when a machine is busy or broken; completed sets are preserved across swaps
+   - 🔄 **Up to 6 alternative exercises** per movement (same muscle, equipment- and safety-aware) — **watch the demo video first**, then tap "Yes, swap to this" or keep browsing; completed sets are preserved across swaps
    - 🎲 A **"New Mix"** shuffle button and **automatic weekly rotation** so workouts never go stale
 6. **Progress tracking** — day streak, total workouts, training volume, weekly calendar strip, personal bests, and complete history.
 7. **Prenatal & postpartum programs** — dedicated, curated, safety-first plans (breathing, pelvic floor, core-restore, gentle strength), only using exercises flagged safe for that stage.
@@ -40,7 +40,7 @@ css/
   styles.css          Full design system: dark premium theme, cards, buttons, timer ring,
                       onboarding, dashboard, workout, progress & profile screens (mobile-first)
 js/
-  data.js             EXERCISE DATABASE — 143 exercises. Each has: id, name, target muscles,
+  data.js             EXERCISE DATABASE — 201 exercises. Each has: id, name, target muscles,
                       equipment tier (gym/min/body), type (compound/isolation/core/cardio/
                       mobility/recovery), a pinned verified YouTube video id (vid) + a search
                       query fallback (v), coaching cues, and preg/post safety flags + notes.
@@ -151,4 +151,4 @@ Everything is plain ES2020 in three readable files. No hidden magic.
 
 ---
 
-Made with 💜 — *Fit For Life: where is this app dropped from the sky?* 😉
+Made with 💜 by **Jayavardhan Tummidi** — *Fit For Life: where is this app dropped from the sky?* 😉
