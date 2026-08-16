@@ -349,24 +349,60 @@ function shufflePlan() {
 /* ================= workout screen ================= */
 function openDay(i) {
   currentDay = i;
-  // start / resume session
-  if (!state.activeSession || state.activeSession.dayIndex !== i || state.activeSession.date !== todayKey()) {
+  // start / resume session — snapshot the day so swaps & added sets stick
+  if (!state.activeSession || !state.activeSession.exercises || state.activeSession.dayIndex !== i || state.activeSession.date !== todayKey()) {
     const program = getProgram();
+    const day = program[i];
     const sets = {};
-    program[i].exercises.forEach((e) => {
+    day.exercises.forEach((e) => {
       sets[e.id] = Array.from({ length: e.sets }, () => ({ w: '', r: '', done: false }));
     });
-    state.activeSession = { dayIndex: i, date: todayKey(), sets };
+    state.activeSession = {
+      dayIndex: i, date: todayKey(),
+      dayName: day.name, dayIcon: day.icon,
+      exercises: day.exercises.map((e) => ({ ...e })),   // snapshot (swappable)
+      sets,
+    };
     save();
   }
   go('workout');
 }
 
+/* How to count the weight for this exercise — inferred from its name */
+function weightHint(ex) {
+  const n = ex.n.toLowerCase();
+  if (ex.eq === 'body') return null;
+  if (n.includes('ez-bar')) return '⚖️ Include the bar: EZ-bar weighs ≈ 7.5 kg / 15 lb empty — log bar + plates.';
+  if (n.includes('barbell') || n.includes('t-bar') || ['deadlift','ohp','cgbp','hip-thrust'].includes(ex.id))
+    return '⚖️ Include the bar: a standard Olympic bar weighs 20 kg / 45 lb — log bar + all plates.';
+  if (n.includes('dumbbell') || n.includes('kettlebell') || n.includes('db '))
+    return '⚖️ Log the weight of ONE dumbbell only (e.g. two 10 kg dumbbells → enter 10).';
+  if (n.includes('cable') || n.includes('machine') || n.includes('pulldown') || n.includes('pushdown') || n.includes('pec deck') || n.includes('leg press') || n.includes('leg curl') || n.includes('leg extension') || n.includes('hack squat') || n.includes('abduction') || n.includes('calf raise (machine'))
+    return '⚖️ Log the number shown on the weight stack / plates you selected.';
+  if (n.includes('band')) return '⚖️ Bands: log the labeled resistance if known, or leave weight blank.';
+  return null;
+}
+
+/* 5–6 alternatives targeting the same primary muscle, equipment & safety aware */
+function altsFor(exId, dayExIds) {
+  const ex = EX_BY_ID[exId];
+  const p = state.profile;
+  const tag = Object.keys(MUSCLE_TAGS).find((t) => MUSCLE_TAGS[t].includes(ex.m[0]));
+  const tiers = EQUIP_ACCESS[p.equip] || EQUIP_ACCESS.none;
+  const safeKey = p.maternity === 'pregnant' ? 'preg' : p.maternity === 'postpartum' ? 'post' : null;
+  return EXERCISES.filter((e) =>
+    e.id !== exId &&
+    !dayExIds.includes(e.id) &&
+    tiers.includes(e.eq) &&
+    (!safeKey || e[safeKey]) &&
+    (tag ? MUSCLE_TAGS[tag].includes(e.m[0]) : e.m[0] === ex.m[0])
+  ).slice(0, 6);
+}
+
 function renderWorkout() {
-  const program = getProgram();
-  const day = program[currentDay];
   const sess = state.activeSession;
-  if (!day || !sess) { screen = 'dashboard'; return renderDashboard(); }
+  if (!sess || !sess.exercises) { screen = 'dashboard'; return renderDashboard(); }
+  const day = { name: sess.dayName, icon: sess.dayIcon, exercises: sess.exercises };
 
   const totalSets = Object.values(sess.sets).flat().length;
   const doneSets = Object.values(sess.sets).flat().filter((s) => s.done).length;
@@ -390,6 +426,18 @@ function renderWorkout() {
         <button class="set-done ${s.done ? 'on' : ''}" onclick="toggleSet('${slot.id}', ${si}, ${slot.rest})">${s.done ? '✓' : '○'}</button>
       </div>`).join('');
 
+    const hint = weightHint(ex);
+    const dayIds = day.exercises.map((e) => e.id);
+    const alts = altsFor(slot.id, dayIds);
+    const altList = alts.map((a) => `
+      <div class="alt-item" onclick="swapExercise('${slot.id}', '${a.id}')">
+        <div class="alt-info">
+          <div class="an">${esc(a.n)}</div>
+          <div class="am">🎯 ${esc(a.m[0])} · ${a.eq === 'gym' ? '🏢 gym' : a.eq === 'min' ? '🏠 dumbbell/band' : '🌍 no equipment'}</div>
+        </div>
+        <span class="alt-swap">Swap ⇄</span>
+      </div>`).join('');
+
     return `
       <div class="card ex-card ${idx === 0 ? 'open' : ''}" id="exc-${idx}">
         <div class="ex-head" onclick="toggleCard(${idx})">
@@ -403,12 +451,13 @@ function renderWorkout() {
         <div class="ex-body">
           <div class="muscle-tags">${muscleTags}</div>
           <div class="video-shell" id="vid-${idx}">
-            <div class="video-load" onclick="loadVideo(${idx}, '${encodeURIComponent(ex.v)}')">
+            <div class="video-load" onclick="loadVideo(${idx}, '${slot.id}')">
               <div class="play">▶</div>
-              <div class="vt">Watch how to do it — close-up form demo</div>
+              <div class="vt">${ex.vid ? 'Watch how to do it — close-up form demo' : 'Watch a form demo on YouTube ↗'}</div>
             </div>
           </div>
           ${ex.note ? `<div class="safety-note">⚠️ ${esc(ex.note)}</div>` : ''}
+          ${hint ? `<div class="weight-hint">${esc(hint)}</div>` : ''}
           <ul class="cues">${ex.cues.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
           <div class="set-table">
             <div class="set-row">
@@ -417,7 +466,13 @@ function renderWorkout() {
             </div>
             ${setRows}
           </div>
+          <button class="btn btn-ghost btn-sm btn-block mt-1" onclick="addSet('${slot.id}')">＋ Add another set</button>
           <div class="rest-hint">✓ a set to auto-start your ${slot.rest}s rest timer</div>
+          ${alts.length ? `
+          <div class="alts" id="alts-${idx}">
+            <button class="alts-toggle" onclick="toggleAlts(${idx})">🔄 Equipment busy or broken? ${alts.length} alternatives ▾</button>
+            <div class="alts-list hidden">${altList}</div>
+          </div>` : ''}
         </div>
       </div>`;
   }).join('');
@@ -439,14 +494,58 @@ function toggleCard(idx) {
   $('#exc-' + idx)?.classList.toggle('open');
 }
 
-function loadVideo(idx, query) {
-  // Privacy-friendly YouTube search-playlist embed — always finds current, working demos.
+function toggleAlts(idx) {
+  document.querySelector(`#alts-${idx} .alts-list`)?.classList.toggle('hidden');
+}
+
+function addSet(exId) {
+  const arr = state.activeSession?.sets?.[exId];
+  if (!arr) return;
+  if (arr.length >= 10) { toast('10 sets is plenty, beast! 🦍'); return; }
+  const lastFilled = [...arr].reverse().find((s) => s.w !== '');
+  arr.push({ w: lastFilled ? lastFilled.w : '', r: '', done: false });   // carry last used weight
+  save();
+  render();
+  // keep the card open after re-render
+  const sess = state.activeSession;
+  const idx = sess.exercises.findIndex((e) => e.id === exId);
+  if (idx >= 0) $('#exc-' + idx)?.classList.add('open');
+  toast('Set added 💪');
+}
+
+function swapExercise(oldId, newId) {
+  const sess = state.activeSession;
+  if (!sess) return;
+  const idx = sess.exercises.findIndex((e) => e.id === oldId);
+  if (idx < 0 || !EX_BY_ID[newId]) return;
+  const slot = sess.exercises[idx];
+  sess.exercises[idx] = { ...slot, id: newId };              // keep sets/reps/rest scheme
+  const doneSets = (sess.sets[oldId] || []).filter((s) => s.done);
+  sess.sets[newId] = [
+    ...doneSets,                                             // preserve completed work
+    ...Array.from({ length: Math.max(slot.sets - doneSets.length, 1) }, () => ({ w: '', r: '', done: false })),
+  ];
+  delete sess.sets[oldId];
+  save();
+  render();
+  $('#exc-' + idx)?.classList.add('open');
+  toast(`Swapped to ${EX_BY_ID[newId].n} 🔄`);
+}
+
+function loadVideo(idx, exId) {
   const shell = $('#vid-' + idx);
-  if (!shell) return;
-  shell.innerHTML = `<iframe
-      src="https://www.youtube-nocookie.com/embed?listType=search&list=${query}"
-      title="Exercise demo" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-      allowfullscreen loading="lazy"></iframe>`;
+  const ex = EX_BY_ID[exId];
+  if (!shell || !ex) return;
+  if (ex.vid) {
+    // pinned, verified demo video — privacy-enhanced embed
+    shell.innerHTML = `<iframe
+        src="https://www.youtube-nocookie.com/embed/${ex.vid}?rel=0&modestbranding=1"
+        title="${esc(ex.n)} demo" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen loading="lazy"></iframe>`;
+  } else {
+    // fallback: open a YouTube search for the exercise demo
+    window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(ex.v), '_blank', 'noopener');
+  }
 }
 
 function logSet(exId, si, field, val) {
@@ -473,15 +572,13 @@ function finishWorkout() {
   if (!done.length) { toast('Complete at least one set first 💪'); return; }
 
   const volume = done.reduce((a, s) => a + (parseFloat(s.w) || 0) * (parseFloat(s.r) || 0), 0);
-  const program = getProgram();
-  const day = program[sess.dayIndex];
   const setsRecord = {};
   for (const [exId, arr] of Object.entries(sess.sets)) {
     const d = arr.filter((s) => s.done).map((s) => ({ w: s.w, r: s.r }));
     if (d.length) setsRecord[exId] = d;
   }
   state.logs[sess.date] = {
-    dayIndex: sess.dayIndex, dayName: day ? day.name : 'Workout',
+    dayIndex: sess.dayIndex, dayName: sess.dayName || 'Workout',
     sets: setsRecord, volume: Math.round(volume), ts: Date.now(),
   };
   state.activeSession = null;

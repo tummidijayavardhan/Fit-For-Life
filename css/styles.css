@@ -273,6 +273,34 @@ h3 { font-size: 1.05rem; font-weight: 600; }
 
 .rest-hint { font-size: 0.78rem; color: var(--muted); text-align: center; margin-top: 4px; }
 
+.weight-hint {
+  font-size: 0.82rem; background: rgba(34, 211, 238, 0.08); color: var(--accent);
+  border: 1px solid rgba(34, 211, 238, 0.22); border-radius: 12px;
+  padding: 10px 12px; margin-bottom: 12px;
+}
+
+/* alternatives */
+.alts { margin-top: 14px; }
+.alts-toggle {
+  width: 100%; background: var(--bg-2); color: var(--accent-2);
+  border: 1px dashed rgba(167, 139, 250, 0.4); border-radius: 12px;
+  padding: 11px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.alts-list { margin-top: 8px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.alt-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 13px; cursor: pointer; background: var(--bg-2);
+  border-bottom: 1px solid var(--border); transition: background 0.15s;
+}
+.alt-item:last-child { border-bottom: none; }
+.alt-item:active { background: var(--card-2); }
+.alt-item .an { font-weight: 600; font-size: 0.9rem; }
+.alt-item .am { font-size: 0.74rem; color: var(--muted); }
+.alt-item .alt-swap {
+  font-size: 0.76rem; font-weight: 700; color: var(--accent);
+  background: rgba(34, 211, 238, 0.12); border-radius: 99px; padding: 5px 11px; white-space: nowrap;
+}
+
 /* ---------------- rest timer overlay ---------------- */
 .timer-overlay {
   position: fixed; inset: 0; z-index: 100;
