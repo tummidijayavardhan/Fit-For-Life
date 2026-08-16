@@ -13,11 +13,13 @@
 3. **Training location** — Commercial gym / Home (medium) gym / No equipment at all.
 4. **Days per week** — 3, 4, or 5 day programs.
 5. The app then **generates a fully personalized weekly plan**: 6–8 exercises per day, with:
-   - 🎥 An embedded close-up **video demo** for every exercise
+   - 🎥 An embedded close-up **video demo** for every exercise (pinned, embed-verified YouTube IDs)
    - 🎯 **Target-muscle focus** tags (primary + secondary)
    - ✅ Pro **coaching cues** for perfect form
-   - 📝 **Set-by-set logging** (weight × reps, or seconds for timed moves)
+   - ⚖️ **Weight-entry guidance** per equipment type (include the 20 kg/45 lb bar for barbells, log ONE dumbbell's weight for dumbbell moves, log the stack number for machines/cables)
+   - 📝 **Set-by-set logging** (weight × reps, or seconds for timed moves) with a ➕ **Add another set** button (carries your last weight forward)
    - ⏱ An automatic full-screen **rest timer** (with +15s / skip) after every completed set
+   - 🔄 **Up to 6 alternative exercises** per movement (same muscle, equipment- and safety-aware) with one-tap swap — for when a machine is busy or broken; completed sets are preserved across swaps
    - 🎲 A **"New Mix"** shuffle button and **automatic weekly rotation** so workouts never go stale
 6. **Progress tracking** — day streak, total workouts, training volume, weekly calendar strip, personal bests, and complete history.
 7. **Prenatal & postpartum programs** — dedicated, curated, safety-first plans (breathing, pelvic floor, core-restore, gentle strength), only using exercises flagged safe for that stage.
@@ -40,8 +42,8 @@ css/
 js/
   data.js             EXERCISE DATABASE — 143 exercises. Each has: id, name, target muscles,
                       equipment tier (gym/min/body), type (compound/isolation/core/cardio/
-                      mobility/recovery), a YouTube search query for its demo video, coaching
-                      cues, and preg/post safety flags + optional safety notes.
+                      mobility/recovery), a pinned verified YouTube video id (vid) + a search
+                      query fallback (v), coaching cues, and preg/post safety flags + notes.
   plans.js            PLAN ENGINE — turns a profile into a weekly program:
                       • Splits: 3-day full-body, 4-day upper/lower, 5-day PPL-style
                       • Separate female split variants with extra glute/lower-body emphasis
@@ -80,7 +82,7 @@ js/
 |---|---|
 | Vanilla JS, no build | Deploys as-is on GitHub Pages; any AI/human can review & extend without tooling |
 | `localStorage` only | User asked for zero server-side anything; progress resumes per-device/browser |
-| YouTube `listType=search` embeds (`youtube-nocookie.com`) | Always-current form demos with no API key, no quota, no broken links, privacy-enhanced |
+| YouTube embeds via **pinned, verified video IDs** (`vid` field per exercise, `youtube-nocookie.com`) | YouTube removed search-playlist embeds; every ID was verified embeddable via oEmbed at build time. Exercises without a `vid` fall back to opening a YouTube search |
 | Videos load on tap only | Keeps the page fast and data-friendly on mobile |
 | Seeded PRNG for plans | Plans are stable within a week (log against the same workout) yet rotate weekly |
 | Curated maternal templates | Pregnancy/postpartum safety is never left to random selection |
