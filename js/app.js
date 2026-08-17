@@ -88,7 +88,17 @@ function render() {
   window.scrollTo(0, 0);
 }
 
-function go(s) { screen = s; render(); }
+function go(s) { screen = s; render(); trackView('/' + s); }
+
+/* ---- GoatCounter analytics (anonymous, cookie-free) ----
+   The loader script counts the initial page load; these helpers
+   count SPA screen changes and key milestone events. */
+function trackView(path) {
+  try { window.goatcounter?.count?.({ path, title: 'Fit For Life — ' + path.replace('/', ''), event: false }); } catch (e) {}
+}
+function trackEvent(name) {
+  try { window.goatcounter?.count?.({ path: name, title: name, event: true }); } catch (e) {}
+}
 
 /* ================= onboarding ================= */
 const OB_STEPS = ['welcome', 'name', 'gender', 'maternity', 'goal', 'equip', 'days'];
@@ -254,6 +264,7 @@ function obNext() {
   };
   save();
   confetti();
+  trackEvent('profile-created');
   toast(`Welcome to the family, ${firstName()}! 🎉`);
   go('dashboard');
 }
@@ -612,6 +623,7 @@ function finishWorkout() {
   state.activeSession = null;
   save();
   confetti();
+  trackEvent('workout-finished');
   toast(`Crushed it, ${firstName()}! ${done.length} sets logged 🎉`);
   go('progress');
 }

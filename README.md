@@ -98,6 +98,17 @@ js/
 
 ---
 
+## 📊 Analytics
+
+The app uses [GoatCounter](https://www.goatcounter.com/) — free, open-source, privacy-friendly (no cookies, GDPR-compliant, counts unique daily visitors without tracking individuals).
+
+- **Dashboard:** https://fitforlife.goatcounter.com — daily/weekly/monthly visitors, unique visits, pages, referrers, countries, devices & browsers.
+- **How it's wired:** the loader script in `index.html` counts initial page loads; because this is a single-page app, `trackView()` in `js/app.js` also logs every screen change (`/dashboard`, `/workout`, `/progress`, `/profile`) via `window.goatcounter.count()`.
+- **Milestone events:** `profile-created` (new user finished onboarding) and `workout-finished` (a workout was completed) appear in the dashboard as events — the truest measure of *active* users, not just visitors.
+- Workout data itself never leaves the user's device; only anonymous page-view pings go to GoatCounter.
+
+---
+
 ## 🚀 Deployment
 
 The app is 100% static — GitHub Pages hosts it for free:
