@@ -173,9 +173,13 @@ const SPECIAL_SCHEME = {
 };
 
 /* ---------- helpers ---------- */
-function exercisePool(equipKey, filterFn) {
+/* Pools ordered by equipment preference: a commercial-gym user gets
+   gym-based content first (machines/barbells/cables), then dumbbells,
+   and bodyweight only as a last resort. Home users get dumbbell/band
+   content before bodyweight. */
+function exercisePools(equipKey, filterFn) {
   const tiers = EQUIP_ACCESS[equipKey] || EQUIP_ACCESS.none;
-  return EXERCISES.filter(e => tiers.includes(e.eq) && (!filterFn || filterFn(e)));
+  return tiers.map(t => EXERCISES.filter(e => e.eq === t && (!filterFn || filterFn(e))));
 }
 
 function matchesTag(ex, tag) {
@@ -208,13 +212,24 @@ const TAG_FALLBACKS = {
   cardio: ['core', 'mobility'],
 };
 
-/* Pick one exercise for a slot, never repeating within the day */
-function pickForSlot(pool, tag, usedDay, usedWeek, rnd) {
+/* Pick one exercise for a slot, never repeating within the day.
+   Preference order: (1) best equipment tier + fresh this week,
+   (2) lower tiers + fresh, (3) best tier allowing weekly repeats. */
+function pickForSlot(pools, tag, usedDay, usedWeek, rnd) {
   const tryTags = [tag, ...(TAG_FALLBACKS[tag] || [])];
+  // pass 1: tier order, unused this week
   for (const t of tryTags) {
-    let candidates = pool.filter(e => matchesTag(e, t) && !usedDay.has(e.id) && !usedWeek.has(e.id));
-    if (!candidates.length) candidates = pool.filter(e => matchesTag(e, t) && !usedDay.has(e.id));
-    if (candidates.length) return candidates[Math.floor(rnd() * candidates.length)];
+    for (const pool of pools) {
+      const c = pool.filter(e => matchesTag(e, t) && !usedDay.has(e.id) && !usedWeek.has(e.id));
+      if (c.length) return c[Math.floor(rnd() * c.length)];
+    }
+  }
+  // pass 2: tier order, allow weekly repeats (still no repeats within the day)
+  for (const t of tryTags) {
+    for (const pool of pools) {
+      const c = pool.filter(e => matchesTag(e, t) && !usedDay.has(e.id));
+      if (c.length) return c[Math.floor(rnd() * c.length)];
+    }
   }
   return null;
 }
@@ -259,7 +274,7 @@ function generateProgram(profile, week = 0, variant = 0) {
   const scheme = GOAL_SCHEMES[goal] || GOAL_SCHEMES.combo;
   const splitSrc = gender === 'female' ? SPLITS_FEMALE : SPLITS;
   const template = splitSrc[days] || splitSrc[3];
-  const pool = exercisePool(equip);
+  const pools = exercisePools(equip);
   const rnd = seededRandom(`${profile.name}|${goal}|${equip}|${days}|w${week}|v${variant}`);
   const usedWeek = new Set();
 
@@ -268,7 +283,7 @@ function generateProgram(profile, week = 0, variant = 0) {
     const exercises = [];
 
     for (const tag of day.slots) {
-      const ex = pickForSlot(pool, tag, usedDay, usedWeek, rnd);
+      const ex = pickForSlot(pools, tag, usedDay, usedWeek, rnd);
       if (!ex) continue;
       usedDay.add(ex.id);
       usedWeek.add(ex.id);
@@ -279,7 +294,7 @@ function generateProgram(profile, week = 0, variant = 0) {
     /* guarantee 6–8 exercises even in sparse pools */
     for (const padTag of ['core', 'cardio', 'mobility', 'glutes']) {
       while (exercises.length < 6) {
-        const ex = pickForSlot(pool, padTag, usedDay, new Set(), rnd);
+        const ex = pickForSlot(pools, padTag, usedDay, new Set(), rnd);
         if (!ex) break;
         usedDay.add(ex.id);
         const s = schemeFor(ex, scheme);
@@ -290,7 +305,7 @@ function generateProgram(profile, week = 0, variant = 0) {
 
     /* weight-loss / combo cardio finishers */
     for (let f = 0; f < scheme.finishers && exercises.length < 8; f++) {
-      const ex = pickForSlot(pool, 'cardio', usedDay, new Set(), rnd);
+      const ex = pickForSlot(pools, 'cardio', usedDay, new Set(), rnd);
       if (!ex) break;
       usedDay.add(ex.id);
       const s = scheme.cardio;

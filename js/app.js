@@ -586,20 +586,23 @@ function weightHint(ex) {
   return '⚖️ Log the total weight you moved (bar + plates, or the machine stack number).';
 }
 
-/* 5–6 alternatives targeting the same primary muscle, equipment & safety aware */
+/* 5–6 alternatives targeting the same primary muscle — ordered by the
+   user's equipment preference (gym users see gym-based options first) */
 function altsFor(exId, dayExIds) {
   const ex = EX_BY_ID[exId];
   const p = state.profile;
   const tag = Object.keys(MUSCLE_TAGS).find((t) => MUSCLE_TAGS[t].includes(ex.m[0]));
   const tiers = EQUIP_ACCESS[p.equip] || EQUIP_ACCESS.none;
   const safeKey = p.maternity === 'pregnant' ? 'preg' : p.maternity === 'postpartum' ? 'post' : null;
-  return EXERCISES.filter((e) =>
+  const matches = EXERCISES.filter((e) =>
     e.id !== exId &&
     !dayExIds.includes(e.id) &&
     tiers.includes(e.eq) &&
     (!safeKey || e[safeKey]) &&
     (tag ? MUSCLE_TAGS[tag].includes(e.m[0]) : e.m[0] === ex.m[0])
-  ).slice(0, 6);
+  );
+  matches.sort((a, b) => tiers.indexOf(a.eq) - tiers.indexOf(b.eq));   // best tier first
+  return matches.slice(0, 6);
 }
 
 /* ---------- workout stats (time / volume / reps) ---------- */
