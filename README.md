@@ -87,7 +87,7 @@ js/
 | Videos load on tap only | Keeps the page fast and data-friendly on mobile |
 | Seeded PRNG for plans | Plans are stable within a week (log against the same workout) yet rotate weekly |
 | Curated maternal templates | Pregnancy/postpartum safety is never left to random selection |
-| Equipment tiers cascade (gym ⊃ min ⊃ body) | Gym users still get the best dumbbell/bodyweight moves |
+| Equipment tiers are **preference-ordered** (gym → dumbbell → bodyweight) | Commercial-gym plans are ~99% gym-based content (machines/barbells/cables); lower tiers are used only when a muscle has no fresh option left |
 
 ---
 
