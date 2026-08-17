@@ -1,5 +1,5 @@
 /* Fit For Life — service worker: cache-first for app shell so it works offline */
-const CACHE = 'ffl-v3';
+const CACHE = 'ffl-v4';
 const ASSETS = [
   './',
   './index.html',
