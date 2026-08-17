@@ -12,7 +12,7 @@
 2. **Goal selection** — Weight Loss, Strength, or Weight Loss + Strength combo.
 3. **Training location** — Commercial gym / Home (medium) gym / No equipment at all.
 4. **Days per week** — 3, 4, or 5 day programs.
-5. The app then **generates a fully personalized weekly plan**: 6–8 exercises per day, delivered through a **Gymverse-style one-exercise-at-a-time workout player** ("EXERCISE 1/6" with a live Time · Volume · Reps stats bar), with:
+5. Tapping a day opens a **workout preview** — see all exercises, adjust sets with a ± stepper, edit target reps, watch demos, and swap exercises. The session clock and stats begin **only when the user presses START WORKOUT**. The plan then runs in a **Gymverse-style one-exercise-at-a-time workout player** ("EXERCISE 1/6" with a live Time · Volume · Reps stats bar), with:
    - 🎥 An embedded close-up **video demo** for every exercise (pinned, embed-verified YouTube IDs)
    - 🎯 **Target-muscle focus** tags (primary + secondary)
    - ✅ Pro **coaching cues** for perfect form
