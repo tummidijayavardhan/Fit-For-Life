@@ -12,18 +12,19 @@
 2. **Goal selection** — Weight Loss, Strength, or Weight Loss + Strength combo.
 3. **Training location** — Commercial gym / Home (medium) gym / No equipment at all.
 4. **Days per week** — 3, 4, or 5 day programs.
-5. The app then **generates a fully personalized weekly plan**: 6–8 exercises per day, with:
+5. The app then **generates a fully personalized weekly plan**: 6–8 exercises per day, delivered through a **Gymverse-style one-exercise-at-a-time workout player** ("EXERCISE 1/6" with a live Time · Volume · Reps stats bar), with:
    - 🎥 An embedded close-up **video demo** for every exercise (pinned, embed-verified YouTube IDs)
    - 🎯 **Target-muscle focus** tags (primary + secondary)
    - ✅ Pro **coaching cues** for perfect form
    - ⚖️ **Weight-entry guidance** per equipment type (include the 20 kg/45 lb bar for barbells, log ONE dumbbell's weight for dumbbell moves, log the stack number for machines/cables)
-   - 📝 **Set-by-set logging** (weight × reps, or seconds for timed moves) with a ➕ **Add another set** button (carries your last weight forward)
-   - ⏱ An automatic full-screen **rest timer** (with +15s / skip) after every completed set
+   - 📝 **Set-by-set logging** (weight × reps, or seconds for timed moves) with a ➕ **Add another set** button (carries your last weight forward) and a **KG ⇄ LB unit toggle**
+   - ⏱ An automatic full-screen **rest timer** (with +15s / skip) after every completed set — **wall-clock based**, so it stays accurate even if the phone is locked or the app is backgrounded
    - 🔄 **Up to 6 alternative exercises** per movement (same muscle, equipment- and safety-aware) — **watch the demo video first**, then tap "Yes, swap to this" or keep browsing; completed sets are preserved across swaps
    - 🎲 A **"New Mix"** shuffle button and **automatic weekly rotation** so workouts never go stale
 6. **Progress tracking** — day streak, total workouts, training volume, weekly calendar strip, personal bests, and complete history.
 7. **Prenatal & postpartum programs** — dedicated, curated, safety-first plans (breathing, pelvic floor, core-restore, gentle strength), only using exercises flagged safe for that stage.
 8. **Privacy by design** — every byte of data stays in the user's browser (`localStorage`). Nothing is uploaded anywhere. Progress resumes automatically in the same (non-incognito) browser.
+9. **Dark & light themes** — toggle from the dashboard (☀️/🌙) or Profile → Preferences; maternity-specific safety notes are shown only to the users they apply to.
 9. **PWA-ready & offline-capable** — a service worker caches the app shell; users can "Add to Home Screen" on iOS/Android and it behaves like a native app.
 
 ---

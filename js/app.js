@@ -85,7 +85,19 @@ function render() {
   else if (screen === 'workout') app.innerHTML = renderWorkout() + renderNav('home');
   else if (screen === 'progress') app.innerHTML = renderProgress() + renderNav('progress');
   else if (screen === 'profile') app.innerHTML = renderProfileScreen() + renderNav('profile');
+  ensureStatsTicker();
   window.scrollTo(0, 0);
+}
+
+/* ================= theme (dark / light) ================= */
+function applyTheme() {
+  document.body.classList.toggle('light', state.theme === 'light');
+}
+function toggleTheme() {
+  state.theme = state.theme === 'light' ? 'dark' : 'light';
+  save();
+  applyTheme();
+  render();
 }
 
 function go(s) { screen = s; render(); trackView('/' + s); }
@@ -316,6 +328,7 @@ function renderDashboard() {
         <div class="hello">Hey, ${esc(firstName())} 👋</div>
         <div class="muted small">${greeting()}</div>
       </div>
+      <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">${state.theme === 'light' ? '🌙' : '☀️'}</button>
     </div>
 
     <div class="card hero-card">
@@ -328,7 +341,7 @@ function renderDashboard() {
     <div class="stat-row">
       <div class="stat"><div class="v">${streak}🔥</div><div class="l">Day streak</div></div>
       <div class="stat"><div class="v">${workouts}</div><div class="l">Workouts</div></div>
-      <div class="stat"><div class="v">${vol >= 1000 ? (vol / 1000).toFixed(1) + 'k' : vol}</div><div class="l">Volume (kg·reps)</div></div>
+      <div class="stat"><div class="v">${vol >= 1000 ? (vol / 1000).toFixed(1) + 'k' : vol}</div><div class="l">Volume (${unit()}·reps)</div></div>
     </div>
 
     <div class="section-head">
@@ -358,7 +371,7 @@ function shufflePlan() {
   render();
 }
 
-/* ================= workout screen ================= */
+/* ================= workout screen (one exercise at a time) ================= */
 function openDay(i) {
   currentDay = i;
   // start / resume session — snapshot the day so swaps & added sets stick
@@ -374,25 +387,43 @@ function openDay(i) {
       dayName: day.name, dayIcon: day.icon,
       exercises: day.exercises.map((e) => ({ ...e })),   // snapshot (swappable)
       sets,
+      exIndex: 0,
+      startTs: Date.now(),
     };
     save();
   }
+  if (state.activeSession.exIndex == null) state.activeSession.exIndex = 0;
+  if (!state.activeSession.startTs) state.activeSession.startTs = Date.now();
   go('workout');
 }
 
-/* How to count the weight for this exercise — inferred from its name */
+/* Maternity-specific notes are only shown to the users they apply to */
+function noteFor(ex) {
+  if (!ex.note) return '';
+  const m = state.profile?.maternity || 'none';
+  if (/pregnan/i.test(ex.note) && m !== 'pregnant') return '';
+  if (/postpartum/i.test(ex.note) && m !== 'postpartum') return '';
+  return ex.note;
+}
+
+/* How to count the weight — every weighted exercise gets guidance */
 function weightHint(ex) {
   const n = ex.n.toLowerCase();
   if (ex.eq === 'body') return null;
+  if (/\bdip|pull-up|chin-up|hang\b|hanging/.test(n))
+    return '⚖️ Bodyweight move — leave weight blank, or log added weight if you use a dip belt.';
   if (n.includes('ez-bar')) return '⚖️ Include the bar: EZ-bar weighs ≈ 7.5 kg / 15 lb empty — log bar + plates.';
-  if (n.includes('barbell') || n.includes('t-bar') || ['deadlift','ohp','cgbp','hip-thrust'].includes(ex.id))
+  if (n.includes('barbell') || n.includes('t-bar') || n.includes('landmine') || ['deadlift','ohp','cgbp','hip-thrust','rack-pull','good-morning','meadows-row'].includes(ex.id))
     return '⚖️ Include the bar: a standard Olympic bar weighs 20 kg / 45 lb — log bar + all plates.';
-  if (n.includes('dumbbell') || n.includes('kettlebell') || n.includes('db '))
-    return '⚖️ Log the weight of ONE dumbbell only (e.g. two 10 kg dumbbells → enter 10).';
-  if (n.includes('cable') || n.includes('machine') || n.includes('pulldown') || n.includes('pushdown') || n.includes('pec deck') || n.includes('leg press') || n.includes('leg curl') || n.includes('leg extension') || n.includes('hack squat') || n.includes('abduction') || n.includes('calf raise (machine'))
+  if (n.includes('band'))
+    return '⚖️ Bands: log the labeled resistance if known, or leave weight blank.';
+  if (n.includes('cable') || n.includes('machine') || n.includes('pulldown') || n.includes('pushdown') || n.includes('pec deck') || n.includes('leg press') || n.includes('leg curl') || n.includes('leg extension') || n.includes('hack squat') || n.includes('abduction') || n.includes('adduction') || n.includes('sled'))
     return '⚖️ Log the number shown on the weight stack / plates you selected.';
-  if (n.includes('band')) return '⚖️ Bands: log the labeled resistance if known, or leave weight blank.';
-  return null;
+  if (n.includes('plate'))
+    return '⚖️ Log the weight of the plate you are holding.';
+  if (ex.eq === 'min')
+    return '⚖️ Log the weight of ONE dumbbell/kettlebell only (e.g. two 10 kg dumbbells → enter 10).';
+  return '⚖️ Log the total weight you moved (bar + plates, or the machine stack number).';
 }
 
 /* 5–6 alternatives targeting the same primary muscle, equipment & safety aware */
@@ -411,102 +442,204 @@ function altsFor(exId, dayExIds) {
   ).slice(0, 6);
 }
 
+/* ---------- workout stats (time / volume / reps) ---------- */
+function unit() { return state.unit || 'kg'; }
+function setUnit(u) { state.unit = u; save(); if (screen === 'workout') { render(); } }
+
+function fmtElapsed(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  return `${h}:${String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+}
+
+function sessStats() {
+  const sess = state.activeSession;
+  if (!sess) return { time: '0:00:00', vol: 0, reps: 0 };
+  let vol = 0, reps = 0;
+  for (const arr of Object.values(sess.sets)) for (const s of arr) if (s.done) {
+    vol += (parseFloat(s.w) || 0) * (parseFloat(s.r) || 0);
+    reps += parseFloat(s.r) || 0;
+  }
+  return { time: fmtElapsed(Date.now() - (sess.startTs || Date.now())), vol: Math.round(vol), reps: Math.round(reps) };
+}
+
+let statsTicker = null;
+function updateStats() {
+  const st = sessStats();
+  const t = $('#wk-time'), v = $('#wk-vol'), r = $('#wk-reps');
+  if (t) t.textContent = st.time;
+  if (v) v.textContent = `${st.vol} ${unit()}`;
+  if (r) r.textContent = st.reps;
+}
+function ensureStatsTicker() {
+  if (screen === 'workout' && state.activeSession) {
+    if (!statsTicker) statsTicker = setInterval(updateStats, 1000);
+  } else if (statsTicker) { clearInterval(statsTicker); statsTicker = null; }
+}
+
+/* ---------- set-table markup (rebuilt surgically, never full-page) ---------- */
+function buildSetRows(exId) {
+  const sess = state.activeSession;
+  const slotIdx = sess.exercises.findIndex((e) => e.id === exId);
+  const slot = sess.exercises[slotIdx];
+  const ex = EX_BY_ID[exId];
+  const isTimed = ex.t === 'cardio' || ex.t === 'mobility' || ex.t === 'recovery';
+  const sets = sess.sets[exId] || [];
+  const u = unit();
+  const rows = sets.map((s, si) => `
+      <div class="set-row">
+        <div class="sl">${si + 1}</div>
+        <input type="number" inputmode="decimal" placeholder="${isTimed ? '—' : u}" value="${esc(s.w)}"
+               onchange="logSet('${exId}', ${si}, 'w', this.value)" ${isTimed ? 'disabled' : ''} />
+        <input type="number" inputmode="numeric" placeholder="${isTimed ? 'secs' : 'reps'}" value="${esc(s.r)}"
+               onchange="logSet('${exId}', ${si}, 'r', this.value)" />
+        <button class="set-done ${s.done ? 'on' : ''}" id="sd-${exId}-${si}"
+                onclick="toggleSet('${exId}', ${si}, ${slot.rest})">${s.done ? '✓' : '○'}</button>
+      </div>`).join('');
+  return `
+      <div class="set-row">
+        <div class="set-head">Set</div>
+        <div class="set-head">${isTimed ? '—' : `<span class="unit-seg"><button class="${u === 'kg' ? 'on' : ''}" onclick="setUnit('kg')">KG</button><button class="${u === 'lb' ? 'on' : ''}" onclick="setUnit('lb')">LB</button></span>`}</div>
+        <div class="set-head">${isTimed ? 'Seconds' : 'Reps'}</div><div class="set-head">Done</div>
+      </div>
+      ${rows}`;
+}
+
 function renderWorkout() {
   const sess = state.activeSession;
   if (!sess || !sess.exercises) { screen = 'dashboard'; return renderDashboard(); }
-  const day = { name: sess.dayName, icon: sess.dayIcon, exercises: sess.exercises };
+  const i = Math.min(sess.exIndex || 0, sess.exercises.length - 1);
+  sess.exIndex = i;
+  const N = sess.exercises.length;
+  const slot = sess.exercises[i];
+  const ex = EX_BY_ID[slot.id];
+  const st = sessStats();
 
-  const totalSets = Object.values(sess.sets).flat().length;
-  const doneSets = Object.values(sess.sets).flat().filter((s) => s.done).length;
+  const muscleTags = ex.m.map((m, mi) =>
+    `<span class="mt ${mi === 0 ? 'primary' : ''}">${mi === 0 ? '🎯 ' : ''}${esc(m)}</span>`).join('');
 
-  const cards = day.exercises.map((slot, idx) => {
-    const ex = EX_BY_ID[slot.id];
-    const sets = sess.sets[slot.id] || [];
-    const allDone = sets.length > 0 && sets.every((s) => s.done);
-    const isTimed = ex.t === 'cardio' || ex.t === 'mobility' || ex.t === 'recovery';
-
-    const muscleTags = ex.m.map((m, mi) =>
-      `<span class="mt ${mi === 0 ? 'primary' : ''}">${mi === 0 ? '🎯 ' : ''}${esc(m)}</span>`).join('');
-
-    const setRows = sets.map((s, si) => `
-      <div class="set-row">
-        <div class="sl">${si + 1}</div>
-        <input type="number" inputmode="decimal" placeholder="${isTimed ? '—' : 'kg / lb'}" value="${esc(s.w)}"
-               onchange="logSet('${slot.id}', ${si}, 'w', this.value)" ${isTimed ? 'disabled' : ''} />
-        <input type="number" inputmode="numeric" placeholder="${isTimed ? 'secs' : 'reps'}" value="${esc(s.r)}"
-               onchange="logSet('${slot.id}', ${si}, 'r', this.value)" />
-        <button class="set-done ${s.done ? 'on' : ''}" onclick="toggleSet('${slot.id}', ${si}, ${slot.rest})">${s.done ? '✓' : '○'}</button>
-      </div>`).join('');
-
-    const hint = weightHint(ex);
-    const dayIds = day.exercises.map((e) => e.id);
-    const alts = altsFor(slot.id, dayIds);
-    const altList = alts.map((a, ai) => `
+  const note = noteFor(ex);
+  const hint = weightHint(ex);
+  const dayIds = sess.exercises.map((e) => e.id);
+  const alts = altsFor(slot.id, dayIds);
+  const altList = alts.map((a, ai) => `
       <div class="alt-item">
         <div class="alt-row">
           <div class="alt-info">
             <div class="an">${esc(a.n)}</div>
             <div class="am">🎯 ${esc(a.m[0])} · ${a.eq === 'gym' ? '🏢 gym' : a.eq === 'min' ? '🏠 dumbbell/band' : '🌍 no equipment'}</div>
           </div>
-          <button class="alt-watch" onclick="previewAlt(${idx}, ${ai}, '${a.id}')">▶ Watch</button>
+          <button class="alt-watch" onclick="previewAlt(${i}, ${ai}, '${a.id}')">▶ Watch</button>
         </div>
-        <div class="alt-preview hidden" id="altprev-${idx}-${ai}"></div>
+        <div class="alt-preview hidden" id="altprev-${i}-${ai}"></div>
       </div>`).join('');
 
+  /* exercise jump list (dots + overlay) */
+  const jumpItems = sess.exercises.map((e2, j) => {
+    const ex2 = EX_BY_ID[e2.id];
+    const arr = sess.sets[e2.id] || [];
+    const doneCount = arr.filter((s) => s.done).length;
+    const allDone = arr.length > 0 && doneCount === arr.length;
     return `
-      <div class="card ex-card ${idx === 0 ? 'open' : ''}" id="exc-${idx}">
-        <div class="ex-head" onclick="toggleCard(${idx})">
-          <div class="ex-num ${allDone ? 'completed' : ''}">${allDone ? '✓' : idx + 1}</div>
-          <div class="ex-title">
-            <div class="xn">${esc(ex.n)} ${slot.finisher ? '<span class="badge badge-warn">Finisher</span>' : ''}</div>
-            <div class="xs">${slot.sets} sets × ${esc(slot.reps)} · rest ${slot.rest}s · 🎯 ${esc(ex.m[0])}</div>
-          </div>
-          <div class="chev">▾</div>
-        </div>
-        <div class="ex-body">
-          <div class="muscle-tags">${muscleTags}</div>
-          <div class="video-shell" id="vid-${idx}">
-            <div class="video-load" onclick="loadVideo(${idx}, '${slot.id}')">
-              <div class="play">▶</div>
-              <div class="vt">${ex.vid ? 'Watch how to do it — close-up form demo' : 'Watch a form demo on YouTube ↗'}</div>
-            </div>
-          </div>
-          ${ex.note ? `<div class="safety-note">⚠️ ${esc(ex.note)}</div>` : ''}
-          ${hint ? `<div class="weight-hint">${esc(hint)}</div>` : ''}
-          <ul class="cues">${ex.cues.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
-          <div class="set-table">
-            <div class="set-row">
-              <div class="set-head">Set</div><div class="set-head">${isTimed ? '—' : 'Weight'}</div>
-              <div class="set-head">${isTimed ? 'Seconds' : 'Reps'}</div><div class="set-head">Done</div>
-            </div>
-            ${setRows}
-          </div>
-          <button class="btn btn-ghost btn-sm btn-block mt-1" onclick="addSet('${slot.id}')">＋ Add another set</button>
-          <div class="rest-hint">✓ a set to auto-start your ${slot.rest}s rest timer</div>
-          ${alts.length ? `
-          <div class="alts" id="alts-${idx}">
-            <button class="alts-toggle" onclick="toggleAlts(${idx})">🔄 Equipment busy or broken? ${alts.length} alternatives ▾</button>
-            <div class="alts-list hidden">${altList}</div>
-          </div>` : ''}
+      <div class="jump-item ${j === i ? 'current' : ''}" onclick="jumpToExercise(${j})">
+        <div class="ex-num ${allDone ? 'completed' : ''}">${allDone ? '✓' : j + 1}</div>
+        <div class="jump-info">
+          <div class="jn">${esc(ex2.n)}</div>
+          <div class="jm">${e2.sets} sets × ${esc(e2.reps)} · ${doneCount}/${arr.length} done</div>
         </div>
       </div>`;
   }).join('');
 
+  const nextSlot = i < N - 1 ? sess.exercises[i + 1] : null;
+  const nextEx = nextSlot ? EX_BY_ID[nextSlot.id] : null;
+
   return `
-    <div class="topbar">
-      <button class="btn btn-ghost btn-sm" onclick="go('dashboard')">‹ Back</button>
-      <span class="badge badge-accent">${doneSets}/${totalSets} sets</span>
+    <div class="wk-top">
+      <button class="wk-link" onclick="go('dashboard')">‹ Exit</button>
+      <div class="wk-count">EXERCISE ${i + 1}/${N}</div>
+      <button class="wk-link" onclick="toggleExList()">Exercises ☰</button>
     </div>
-    <h1>${day.icon} ${esc(day.name)}</h1>
-    <p class="muted small mb-2">Tap an exercise to see the video, cues &amp; log your sets.</p>
-    ${cards}
-    <button class="btn btn-primary btn-block mt-3" onclick="finishWorkout()">Finish Workout 🏁</button>
-    <p class="center small muted mt-1">Progress saves on this device automatically.</p>
+
+    <div class="wk-stats">
+      <div class="ws"><div class="wl">Time</div><div class="wv" id="wk-time">${st.time}</div></div>
+      <div class="ws-dot"></div>
+      <div class="ws"><div class="wl">Volume</div><div class="wv" id="wk-vol">${st.vol} ${unit()}</div></div>
+      <div class="ws-dot"></div>
+      <div class="ws"><div class="wl">Reps</div><div class="wv" id="wk-reps">${st.reps}</div></div>
+    </div>
+
+    <div class="card ex-step">
+      <div class="ex-step-head">
+        <div>
+          <h2>${esc(ex.n)} ${slot.finisher ? '<span class="badge badge-warn">Finisher</span>' : ''}</h2>
+          <div class="muted small">${slot.sets} sets × ${esc(slot.reps)} · rest ${slot.rest}s</div>
+        </div>
+      </div>
+      <div class="muscle-tags">${muscleTags}</div>
+      <div class="video-shell" id="vid-${i}">
+        <div class="video-load" onclick="loadVideo(${i}, '${slot.id}')">
+          <div class="play">▶</div>
+          <div class="vt">${ex.vid ? 'Watch how to do it — close-up form demo' : 'Watch a form demo on YouTube ↗'}</div>
+        </div>
+      </div>
+      ${note ? `<div class="safety-note">⚠️ ${esc(note)}</div>` : ''}
+      ${hint ? `<div class="weight-hint">${esc(hint)}</div>` : ''}
+      <ul class="cues">${ex.cues.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+      <div class="set-table" id="settable-${slot.id}">${buildSetRows(slot.id)}</div>
+      <button class="btn btn-ghost btn-sm btn-block mt-1" onclick="addSet('${slot.id}')">＋ Add another set</button>
+      <div class="rest-hint">✓ a set to auto-start your ${slot.rest}s rest timer</div>
+      ${alts.length ? `
+      <div class="alts" id="alts-${i}">
+        <button class="alts-toggle" onclick="toggleAlts(${i})">🔄 Equipment busy or broken? ${alts.length} alternatives ▾</button>
+        <div class="alts-list hidden">${altList}</div>
+      </div>` : ''}
+    </div>
+
+    <div class="wk-nav">
+      <button class="btn btn-ghost" ${i === 0 ? 'disabled' : ''} onclick="stepExercise(-1)">‹ Prev</button>
+      ${i < N - 1
+        ? `<button class="btn btn-primary" style="flex:1" onclick="stepExercise(1)">Next Exercise ›</button>`
+        : `<button class="btn btn-primary" style="flex:1" onclick="finishWorkout()">Finish Workout 🏁</button>`}
+    </div>
+
+    ${nextEx ? `
+    <div class="next-up" onclick="stepExercise(1)">
+      <div class="nu-label">Next exercise</div>
+      <div class="nu-row">
+        <div class="nu-name">${esc(nextEx.n)}</div>
+        <div class="nu-meta">${nextSlot.sets} × ${esc(nextSlot.reps)} · 🎯 ${esc(nextEx.m[0])}</div>
+      </div>
+    </div>` : `<p class="center small muted mt-2">Last one — finish strong! 💪</p>`}
+
+    <div class="exlist-overlay hidden" id="exlist" onclick="if(event.target===this)toggleExList()">
+      <div class="exlist-sheet">
+        <div class="exlist-head"><h3>${sess.dayIcon || ''} ${esc(sess.dayName || 'Workout')}</h3>
+        <button class="wk-link" onclick="toggleExList()">Close ✕</button></div>
+        ${jumpItems}
+        <button class="btn btn-primary btn-block mt-2" onclick="finishWorkout()">Finish Workout 🏁</button>
+      </div>
+    </div>
   `;
 }
 
-function toggleCard(idx) {
-  $('#exc-' + idx)?.classList.toggle('open');
+function stepExercise(d) {
+  const sess = state.activeSession;
+  if (!sess) return;
+  sess.exIndex = Math.max(0, Math.min(sess.exercises.length - 1, (sess.exIndex || 0) + d));
+  save();
+  render();
+}
+
+function jumpToExercise(j) {
+  const sess = state.activeSession;
+  if (!sess) return;
+  sess.exIndex = j;
+  save();
+  render();
+}
+
+function toggleExList() {
+  $('#exlist')?.classList.toggle('hidden');
 }
 
 function toggleAlts(idx) {
@@ -544,11 +677,10 @@ function addSet(exId) {
   const lastFilled = [...arr].reverse().find((s) => s.w !== '');
   arr.push({ w: lastFilled ? lastFilled.w : '', r: '', done: false });   // carry last used weight
   save();
-  render();
-  // keep the card open after re-render
-  const sess = state.activeSession;
-  const idx = sess.exercises.findIndex((e) => e.id === exId);
-  if (idx >= 0) $('#exc-' + idx)?.classList.add('open');
+  // surgical update — no full re-render (protects keyboard/undo state)
+  const table = $('#settable-' + exId);
+  if (table) table.innerHTML = buildSetRows(exId);
+  else render();
   toast('Set added 💪');
 }
 
@@ -567,7 +699,6 @@ function swapExercise(oldId, newId) {
   delete sess.sets[oldId];
   save();
   render();
-  $('#exc-' + idx)?.classList.add('open');
   toast(`Swapped to ${EX_BY_ID[newId].n} 🔄`);
 }
 
@@ -592,6 +723,7 @@ function logSet(exId, si, field, val) {
   if (!s) return;
   s[field] = val;
   save();
+  updateStats();
 }
 
 function toggleSet(exId, si, rest) {
@@ -599,8 +731,12 @@ function toggleSet(exId, si, rest) {
   if (!s) return;
   s.done = !s.done;
   save();
+  // surgical DOM update only — no full re-render (fixes iOS "Undo Typing"
+  // popups and the first-card auto-expanding bug)
+  const btn = $(`#sd-${exId}-${si}`);
+  if (btn) { btn.classList.toggle('on', s.done); btn.textContent = s.done ? '✓' : '○'; }
+  updateStats();
   if (s.done) startTimer(rest || 60);
-  render();
 }
 
 function finishWorkout() {
@@ -628,58 +764,80 @@ function finishWorkout() {
   go('progress');
 }
 
-/* ================= rest timer ================= */
+/* ================= rest timer (wall-clock based — survives phone lock) ================= */
+let timerEndTs = 0, timerTotal = 0;
+
 function startTimer(seconds) {
   stopTimer();
+  timerEndTs = Date.now() + seconds * 1000;
+  timerTotal = seconds;
   const overlay = $('#timer-overlay');
-  let remaining = seconds;
-  const R = 104, CIRC = 2 * Math.PI * R;
-
-  const draw = () => {
-    const frac = remaining / seconds;
-    overlay.innerHTML = `
-      <div class="timer-ring">
-        <svg width="230" height="230" viewBox="0 0 230 230">
-          <defs>
-            <linearGradient id="tgrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#a78bfa"/>
-            </linearGradient>
-          </defs>
-          <circle class="t-track" cx="115" cy="115" r="${R}" fill="none" stroke-width="12"/>
-          <circle class="t-fill" cx="115" cy="115" r="${R}" fill="none" stroke-width="12"
-                  stroke-dasharray="${CIRC}" stroke-dashoffset="${CIRC * (1 - frac)}"/>
-        </svg>
-        <div class="timer-num"><div class="tn">${remaining}</div><div class="tl">Rest · breathe</div></div>
-      </div>
-      <div class="timer-actions">
-        <button class="btn btn-ghost" onclick="extendTimer(15)">+15s</button>
-        <button class="btn btn-primary" onclick="stopTimer()">Skip ▸</button>
-      </div>`;
-  };
-
   overlay.classList.remove('hidden');
   overlay.setAttribute('aria-hidden', 'false');
-  draw();
-
-  timerHandle = setInterval(() => {
-    remaining--;
-    if (remaining <= 0) { beep(); stopTimer(); toast('Rest over — next set! 💥'); return; }
-    if (remaining <= 3) beep(660, 0.08);
-    draw();
-  }, 1000);
-
-  overlay._extend = (s) => { remaining += s; draw(); };
+  drawTimer();
+  // interval throttles in background, but remaining time is computed from
+  // the wall clock, so it is always correct when the screen wakes up
+  timerHandle = setInterval(tickTimer, 250);
 }
 
-function extendTimer(s) { $('#timer-overlay')._extend?.(s); }
+function timerRemaining() { return Math.max(0, Math.ceil((timerEndTs - Date.now()) / 1000)); }
+
+let lastDrawn = -1;
+function tickTimer() {
+  const remaining = timerRemaining();
+  if (remaining <= 0) { beep(); stopTimer(); toast('Rest over — next set! 💥'); try { navigator.vibrate?.(200); } catch (e) {} return; }
+  if (remaining !== lastDrawn) {
+    if (remaining <= 3) beep(660, 0.08);
+    drawTimer();
+  }
+}
+
+function drawTimer() {
+  const overlay = $('#timer-overlay');
+  const remaining = timerRemaining();
+  lastDrawn = remaining;
+  const R = 104, CIRC = 2 * Math.PI * R;
+  const frac = Math.min(1, remaining / (timerTotal || 1));
+  overlay.innerHTML = `
+    <div class="timer-ring">
+      <svg width="230" height="230" viewBox="0 0 230 230">
+        <defs>
+          <linearGradient id="tgrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#a78bfa"/>
+          </linearGradient>
+        </defs>
+        <circle class="t-track" cx="115" cy="115" r="${R}" fill="none" stroke-width="12"/>
+        <circle class="t-fill" cx="115" cy="115" r="${R}" fill="none" stroke-width="12"
+                stroke-dasharray="${CIRC}" stroke-dashoffset="${CIRC * (1 - frac)}"/>
+      </svg>
+      <div class="timer-num"><div class="tn">${remaining}</div><div class="tl">Rest · breathe</div></div>
+    </div>
+    <div class="timer-actions">
+      <button class="btn btn-ghost" onclick="extendTimer(15)">+15s</button>
+      <button class="btn btn-primary" onclick="stopTimer()">Skip ▸</button>
+    </div>`;
+}
+
+function extendTimer(s) {
+  timerEndTs += s * 1000;
+  timerTotal += s;
+  drawTimer();
+}
 
 function stopTimer() {
   clearInterval(timerHandle);
   timerHandle = null;
+  timerEndTs = 0;
   const overlay = $('#timer-overlay');
   overlay.classList.add('hidden');
   overlay.setAttribute('aria-hidden', 'true');
 }
+
+/* instantly resync the timer when the phone screen wakes up */
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && timerHandle) tickTimer();
+  if (!document.hidden && screen === 'workout') updateStats();
+});
 
 /* short beep via WebAudio — no audio files needed */
 let audioCtx = null;
@@ -736,7 +894,7 @@ function renderProgress() {
     const setCount = Object.values(log.sets || {}).flat().length;
     return `<div class="history-item"><div class="hi">✅</div>
       <div class="hd"><div class="hn">${esc(log.dayName)}</div>
-      <div class="hm">${nice} · ${setCount} sets${log.volume ? ` · ${log.volume} kg·reps` : ''}</div></div></div>`;
+      <div class="hm">${nice} · ${setCount} sets${log.volume ? ` · ${log.volume} ${unit()}·reps` : ''}</div></div></div>`;
   }).join('');
 
   return `
@@ -772,6 +930,17 @@ function renderProfileScreen() {
     </div>
     <button class="btn btn-ghost btn-block mt-2" onclick="editProfile()">✏️ Edit Profile / Rebuild Plan</button>
     <button class="btn btn-danger btn-block mt-2" onclick="resetAll()">🗑 Reset Everything</button>
+    <div class="card mt-3">
+      <h3>⚙️ Preferences</h3>
+      <div class="pref-row">
+        <div>Appearance</div>
+        <span class="unit-seg"><button class="${state.theme !== 'light' ? 'on' : ''}" onclick="if(state.theme==='light')toggleTheme()">🌙 Dark</button><button class="${state.theme === 'light' ? 'on' : ''}" onclick="if(state.theme!=='light')toggleTheme()">☀️ Light</button></span>
+      </div>
+      <div class="pref-row">
+        <div>Weight units</div>
+        <span class="unit-seg"><button class="${unit() === 'kg' ? 'on' : ''}" onclick="setUnit('kg');render()">KG</button><button class="${unit() === 'lb' ? 'on' : ''}" onclick="setUnit('lb');render()">LB</button></span>
+      </div>
+    </div>
     <div class="card mt-3">
       <h3>🔒 Your privacy</h3>
       <p class="muted small mt-1">Everything — profile, plans, logs — lives only in this browser on this device.
@@ -819,4 +988,5 @@ function confetti() {
 }
 
 /* ================= boot ================= */
+applyTheme();
 render();
