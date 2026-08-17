@@ -21,6 +21,7 @@
   --radius: 18px;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
 }
 
 /* ---------- light theme ---------- */
@@ -59,7 +60,7 @@ body {
   line-height: 1.55;
 }
 
-.app { max-width: 560px; margin: 0 auto; padding: 20px 16px calc(96px + var(--safe-bottom)); }
+.app { max-width: 560px; margin: 0 auto; padding: calc(16px + var(--safe-top)) 16px calc(96px + var(--safe-bottom)); }
 
 /* ---------------- typography ---------------- */
 h1 { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; }
@@ -163,6 +164,33 @@ body.light {
     radial-gradient(900px 500px at -10% 20%, rgba(34, 211, 238, 0.05), transparent 55%),
     var(--bg);
 }
+
+/* ---------------- workout preview / customize ---------------- */
+.pv-meta { display: flex; gap: 14px; margin: 10px 0 6px; font-size: 0.88rem; font-weight: 600; color: var(--muted); }
+.pv-card { padding: 15px; }
+.pv-head { display: flex; align-items: center; gap: 12px; }
+.pv-title { flex: 1; min-width: 0; }
+.pv-title .xn { font-weight: 700; }
+.pv-title .xs { font-size: 0.78rem; color: var(--muted); }
+.pv-video { margin-top: 12px; animation: slideDown 0.25s ease; }
+.pv-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.pv-ctl-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+.stepper {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg-2); border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden;
+}
+.stepper button {
+  width: 42px; height: 42px; border: none; background: none; color: var(--accent);
+  font-size: 1.25rem; font-weight: 800; cursor: pointer; font-family: inherit;
+}
+.stepper span { font-weight: 800; font-size: 1.05rem; }
+.pv-reps {
+  width: 100%; height: 42px; text-align: center; font-family: inherit; font-size: 1rem; font-weight: 700;
+  background: var(--bg-2); color: var(--text);
+  border: 1.5px solid var(--border); border-radius: 12px; outline: none;
+}
+.pv-reps:focus { border-color: var(--accent); }
+.btn-start { font-size: 1.06rem; letter-spacing: 0.06em; padding: 17px 22px; }
 
 /* ---------------- workout stepper ---------------- */
 .wk-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }

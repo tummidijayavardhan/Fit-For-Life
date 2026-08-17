@@ -82,6 +82,7 @@ function render() {
   const app = $('#app');
   if (screen === 'onboard') app.innerHTML = renderOnboarding();
   else if (screen === 'dashboard') app.innerHTML = renderDashboard() + renderNav('home');
+  else if (screen === 'preview') app.innerHTML = renderPreview() + renderNav('home');
   else if (screen === 'workout') app.innerHTML = renderWorkout() + renderNav('home');
   else if (screen === 'progress') app.innerHTML = renderProgress() + renderNav('progress');
   else if (screen === 'profile') app.innerHTML = renderProfileScreen() + renderNav('profile');
@@ -311,11 +312,12 @@ function renderDashboard() {
   const dayCards = program.map((day, i) => {
     const names = day.exercises.slice(0, 3).map((e) => EX_BY_ID[e.id].n).join(' • ');
     const isDoneToday = doneToday && state.logs[todayKey()].dayIndex === i;
+    const inProgress = state.activeSession && state.activeSession.dayIndex === i && state.activeSession.date === todayKey();
     return `
       <div class="card day-card ${isDoneToday ? 'done-today' : ''}" onclick="openDay(${i})">
         <div class="day-icon">${day.icon}</div>
         <div class="day-info">
-          <div class="dn">Day ${i + 1} · ${esc(day.name)} ${isDoneToday ? '<span class="badge badge-success">Done today</span>' : ''}</div>
+          <div class="dn">Day ${i + 1} · ${esc(day.name)} ${isDoneToday ? '<span class="badge badge-success">Done today</span>' : inProgress ? '<span class="badge badge-warn">Resume ▶</span>' : ''}</div>
           <div class="dm">${day.exercises.length} exercises · ${esc(names)}…</div>
         </div>
         <div class="chev">›</div>
@@ -371,29 +373,187 @@ function shufflePlan() {
   render();
 }
 
-/* ================= workout screen (one exercise at a time) ================= */
+/* ================= day preview (customize, then start) ================= */
 function openDay(i) {
   currentDay = i;
-  // start / resume session — snapshot the day so swaps & added sets stick
-  if (!state.activeSession || !state.activeSession.exercises || state.activeSession.dayIndex !== i || state.activeSession.date !== todayKey()) {
+  const sess = state.activeSession;
+  // resume a workout already in progress for this day
+  if (sess && sess.exercises && (sess.started || sess.startTs) && sess.dayIndex === i && sess.date === todayKey()) {
+    go('workout');
+    return;
+  }
+  // build (or reuse) a customizable draft — NO timer starts here
+  if (!state.draft || state.draft.dayIndex !== i || state.draft.date !== todayKey()) {
     const program = getProgram();
     const day = program[i];
-    const sets = {};
-    day.exercises.forEach((e) => {
-      sets[e.id] = Array.from({ length: e.sets }, () => ({ w: '', r: '', done: false }));
-    });
-    state.activeSession = {
-      dayIndex: i, date: todayKey(),
-      dayName: day.name, dayIcon: day.icon,
-      exercises: day.exercises.map((e) => ({ ...e })),   // snapshot (swappable)
-      sets,
-      exIndex: 0,
-      startTs: Date.now(),
+    state.draft = {
+      dayIndex: i, date: todayKey(), dayName: day.name, dayIcon: day.icon,
+      exercises: day.exercises.map((e) => ({ ...e })),
     };
     save();
   }
-  if (state.activeSession.exIndex == null) state.activeSession.exIndex = 0;
-  if (!state.activeSession.startTs) state.activeSession.startTs = Date.now();
+  go('preview');
+}
+
+function estMinutes(exercises) {
+  // ~40s per set of work + programmed rest, plus setup transitions
+  const secs = exercises.reduce((a, e) => a + e.sets * (40 + (e.rest || 60)), 0) + exercises.length * 30;
+  return Math.round(secs / 60);
+}
+
+function renderPreview() {
+  const d = state.draft;
+  if (!d || !d.exercises) { screen = 'dashboard'; return renderDashboard(); }
+  const totalSets = d.exercises.reduce((a, e) => a + e.sets, 0);
+
+  const rows = d.exercises.map((slot, i) => {
+    const ex = EX_BY_ID[slot.id];
+    const alts = altsFor(slot.id, d.exercises.map((e) => e.id));
+    const altList = alts.map((a, ai) => `
+      <div class="alt-item">
+        <div class="alt-row">
+          <div class="alt-info">
+            <div class="an">${esc(a.n)}</div>
+            <div class="am">🎯 ${esc(a.m[0])} · ${a.eq === 'gym' ? '🏢 gym' : a.eq === 'min' ? '🏠 dumbbell/band' : '🌍 no equipment'}</div>
+          </div>
+          <button class="alt-watch" onclick="pvWatchAlt(${i}, ${ai}, '${a.id}')">▶ Watch</button>
+        </div>
+        <div class="alt-preview hidden" id="pv-altprev-${i}-${ai}"></div>
+      </div>`).join('');
+
+    return `
+      <div class="card pv-card">
+        <div class="pv-head">
+          <div class="ex-num">${i + 1}</div>
+          <div class="pv-title">
+            <div class="xn">${esc(ex.n)} ${slot.finisher ? '<span class="badge badge-warn">Finisher</span>' : ''}</div>
+            <div class="xs">🎯 ${esc(ex.m[0])} · rest ${slot.rest}s</div>
+          </div>
+          <button class="alt-watch" onclick="pvVideo(${i}, '${slot.id}')">▶</button>
+        </div>
+        <div class="pv-video hidden" id="pv-vid-${i}"></div>
+        <div class="pv-controls">
+          <div class="pv-ctl">
+            <div class="pv-ctl-label">Sets</div>
+            <div class="stepper">
+              <button onclick="pvSets(${i}, -1)">−</button>
+              <span id="pv-sets-${i}">${slot.sets}</span>
+              <button onclick="pvSets(${i}, 1)">＋</button>
+            </div>
+          </div>
+          <div class="pv-ctl">
+            <div class="pv-ctl-label">Target reps</div>
+            <input class="pv-reps" type="text" inputmode="numeric" value="${esc(slot.reps)}" maxlength="12"
+                   onchange="pvReps(${i}, this.value)" />
+          </div>
+        </div>
+        ${alts.length ? `
+        <button class="alts-toggle mt-1" onclick="pvToggleAlts(${i})">⇄ Change exercise (${alts.length} alternatives) ▾</button>
+        <div class="alts-list hidden" id="pv-alts-${i}">${altList}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="wk-top">
+      <button class="wk-link" onclick="go('dashboard')">‹ Back</button>
+      <div class="wk-count">PREVIEW &amp; CUSTOMIZE</div>
+      <span style="width:52px"></span>
+    </div>
+    <h1>${d.dayIcon || ''} ${esc(d.dayName)}</h1>
+    <div class="pv-meta">
+      <span>⚡ ${d.exercises.length} exercises</span>
+      <span>🧮 ${totalSets} sets</span>
+      <span>🕐 ~${estMinutes(d.exercises)} min</span>
+    </div>
+    <p class="muted small mb-2">Adjust sets &amp; reps, swap exercises, watch demos — the clock only starts when YOU do.</p>
+    ${rows}
+    <button class="btn btn-primary btn-block btn-start mt-3" onclick="startWorkout()">START WORKOUT 🚀</button>
+    <p class="center small muted mt-1">Timer &amp; stats begin only after you press start.</p>
+  `;
+}
+
+function pvSets(i, delta) {
+  const slot = state.draft?.exercises?.[i];
+  if (!slot) return;
+  slot.sets = Math.max(1, Math.min(10, slot.sets + delta));
+  save();
+  const el = $('#pv-sets-' + i);
+  if (el) el.textContent = slot.sets;
+}
+
+function pvReps(i, val) {
+  const slot = state.draft?.exercises?.[i];
+  if (!slot) return;
+  const clean = String(val).trim().slice(0, 12);
+  if (clean) { slot.reps = clean; save(); }
+}
+
+function pvVideo(i, exId) {
+  const box = $('#pv-vid-' + i);
+  const ex = EX_BY_ID[exId];
+  if (!box || !ex) return;
+  if (!box.classList.contains('hidden')) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+  box.innerHTML = ex.vid
+    ? `<div class="video-shell"><iframe src="https://www.youtube-nocookie.com/embed/${ex.vid}?rel=0&modestbranding=1"
+        title="${esc(ex.n)} demo" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen loading="lazy"></iframe></div>`
+    : `<button class="btn btn-ghost btn-sm btn-block" onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(ex.v)}','_blank','noopener')">Watch demo on YouTube ↗</button>`;
+  box.classList.remove('hidden');
+}
+
+function pvToggleAlts(i) {
+  $('#pv-alts-' + i)?.classList.toggle('hidden');
+}
+
+function pvWatchAlt(i, ai, altId) {
+  const box = $(`#pv-altprev-${i}-${ai}`);
+  const alt = EX_BY_ID[altId];
+  if (!box || !alt) return;
+  if (!box.classList.contains('hidden')) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+  const video = alt.vid
+    ? `<div class="video-shell"><iframe src="https://www.youtube-nocookie.com/embed/${alt.vid}?rel=0&modestbranding=1"
+        title="${esc(alt.n)} demo" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen loading="lazy"></iframe></div>`
+    : `<button class="btn btn-ghost btn-sm btn-block" onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(alt.v)}','_blank','noopener')">Watch demo on YouTube ↗</button>`;
+  box.innerHTML = `
+    ${video}
+    <ul class="cues">${alt.cues.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+    <div class="alt-decide">
+      <button class="btn btn-ghost btn-sm" onclick="pvWatchAlt(${i}, ${ai}, '${altId}')">Keep looking 👀</button>
+      <button class="btn btn-primary btn-sm" onclick="pvSwap(${i}, '${altId}')">Use this instead ⇄</button>
+    </div>`;
+  box.classList.remove('hidden');
+}
+
+function pvSwap(i, newId) {
+  const slot = state.draft?.exercises?.[i];
+  if (!slot || !EX_BY_ID[newId]) return;
+  state.draft.exercises[i] = { ...slot, id: newId };
+  save();
+  render();
+  toast(`Swapped to ${EX_BY_ID[newId].n} 🔄`);
+}
+
+/* the ONLY place a workout (and its timer) starts */
+function startWorkout() {
+  const d = state.draft;
+  if (!d) return;
+  const sets = {};
+  d.exercises.forEach((e) => {
+    sets[e.id] = Array.from({ length: e.sets }, () => ({ w: '', r: '', done: false }));
+  });
+  state.activeSession = {
+    dayIndex: d.dayIndex, date: d.date,
+    dayName: d.dayName, dayIcon: d.dayIcon,
+    exercises: d.exercises.map((e) => ({ ...e })),
+    sets, exIndex: 0,
+    startTs: Date.now(),
+    started: true,
+  };
+  state.draft = null;
+  save();
+  trackEvent('workout-started');
+  toast('Let\u2019s go! Clock is running ⏱');
   go('workout');
 }
 
